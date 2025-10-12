@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"errors"
 
+	apperrors "github.com/SamedArslan28/gopost/internal/errors"
 	"github.com/SamedArslan28/gopost/internal/models"
+	"github.com/SamedArslan28/gopost/internal/response"
 	"github.com/SamedArslan28/gopost/internal/service"
 	"github.com/SamedArslan28/gopost/internal/validator"
 	"github.com/gofiber/fiber/v2"
@@ -14,35 +16,30 @@ import (
 type UserHandler struct {
 	service service.UserService
 }
+
+func NewUserHandler(service service.UserService) *UserHandler {
+	return &UserHandler{service: service}
+}
+
 type RegisterForm struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
 	Email    string `json:"email" validate:"required,min_length=5,email"`
 }
 
-func NewUserHandler(service service.UserService) *UserHandler {
-	return &UserHandler{service: service}
-}
-
 func (h *UserHandler) RegisterHandler(c *fiber.Ctx) error {
 	var req RegisterForm
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return response.JSONError(c, fiber.StatusUnprocessableEntity, apperrors.ErrParseBody.Error())
+	}
+
+	if errs := validator.ValidateStruct(req); errs != nil {
+		return response.JSONValidationError(c, errs)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to hash password",
-		})
-	}
-
-	if errs := validator.ValidateStruct(req); errs != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"errors": errs,
-		})
+		return response.JSONError(c, fiber.StatusInternalServerError, "failed to hash password")
 	}
 
 	user := &models.User{
@@ -53,14 +50,10 @@ func (h *UserHandler) RegisterHandler(c *fiber.Ctx) error {
 
 	newUser, err := h.service.Register(c.Context(), user)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to create user: " + err.Error(),
-		})
+		return response.JSONError(c, fiber.StatusInternalServerError, "failed to create user: "+err.Error())
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"user": newUser,
-	})
+	return response.JSONSuccess(c, fiber.StatusCreated, newUser)
 }
 
 type EmailRequest struct {
@@ -71,58 +64,19 @@ func (h *UserHandler) FindByEmailHandler(c *fiber.Ctx) error {
 	var req EmailRequest
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-			"error": "failed to parse req",
-		})
+		return response.JSONError(c, fiber.StatusUnprocessableEntity, apperrors.ErrParseBody.Error())
 	}
 
 	if errs := validator.ValidateStruct(req); errs != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"errors": errs,
-		})
+		return response.JSONValidationError(c, errs)
 	}
 
 	user, err := h.service.GetByEmail(c.Context(), req.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "user not found",
-			})
+			return response.JSONError(c, fiber.StatusNotFound, "email not found")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to get user: " + err.Error(),
-		})
+		return response.JSONError(c, fiber.StatusInternalServerError, "failed to get user")
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"user": user,
-	})
+	return response.JSONSuccess(c, fiber.StatusOK, user)
 }
-
-type IDRequest struct {
-	ID int `json:"id"`
-}
-
-//func (h *UserHandler) FindByIdHandler(c *fiber.Ctx) error {
-//	var req IDRequest
-//	err := c.BodyParser(&req)
-//	if err != nil {
-//		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-//			"error": "failed to parse req",
-//		})
-//	}
-//
-//	user, err := h.service.GetById(c.Context(), req.ID)
-//	if err != nil {
-//		if errors.Is(err, sql.ErrNoRows) {
-//			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-//				"error": "user not found",
-//			})
-//		}
-//		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-//			"error": "failed to get user: " + err.Error(),
-//		})
-//	}
-//	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-//		"user": user,
-//	})
-//}

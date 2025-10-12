@@ -30,11 +30,3 @@ func (s UserService) GetByEmail(ctx context.Context, email string) (*models.User
 	}
 	return user, nil
 }
-
-func (s UserService) GetById(ctx context.Context, id int) (*models.User, error) {
-	user, err := s.repo.GetUserById(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}

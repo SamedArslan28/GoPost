@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2/log"
 )
 
 type ValidationErrors = validator.ValidationErrors
@@ -16,7 +15,7 @@ var validate *validator.Validate
 
 func InitValidator() {
 	validate = validator.New()
-	RegisterCustomValidation(validate)
+	RegisterCustomValidations(validate)
 }
 
 func ValidateStruct(s interface{}) map[string]string {
@@ -41,7 +40,7 @@ func ValidateStruct(s interface{}) map[string]string {
 	return errors
 }
 
-func RegisterCustomValidation(v *validator.Validate) {
+func RegisterCustomValidations(v *validator.Validate) {
 	validations := map[string]validator.Func{
 		"min_length":   MinLength,
 		"email_custom": Email,
@@ -49,7 +48,7 @@ func RegisterCustomValidation(v *validator.Validate) {
 
 	for name, fn := range validations {
 		if err := v.RegisterValidation(name, fn); err != nil {
-			log.Errorf("failed to register validation %q: %v", name, err)
+			println("failed to register validation %q: %v", name, err)
 		}
 	}
 }
