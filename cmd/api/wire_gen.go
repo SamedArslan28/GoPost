@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/SamedArslan28/gopost/internal/config"
 	"github.com/SamedArslan28/gopost/internal/database"
 	"github.com/SamedArslan28/gopost/internal/handler"
 	"github.com/SamedArslan28/gopost/internal/repository"
@@ -15,8 +16,11 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApp(dbDsn string) (*Server, error) {
-	db, err := database.ConnectDB(dbDsn)
+// InitializeApp tells Wire how to build the server, accepting the app config as input.
+// It references the helper providers located in your providers.go file.
+func InitializeApp(cfg config.Config) (*Server, error) {
+	string2 := provideDatabaseDsn(cfg)
+	db, err := database.ConnectDB(string2)
 	if err != nil {
 		return nil, err
 	}
@@ -29,12 +33,14 @@ func InitializeApp(dbDsn string) (*Server, error) {
 
 // wire.go:
 
+func provideDatabaseDsn(cfg config.Config) string {
+	return cfg.DatabaseURL
+}
+
 // provideUserHandler is a helper provider.
 // Your original code was: handler.NewUserHandler(*userService)
 // This function replicates that logic so Wire can use it.
 func provideUserHandler(userService *service.UserService) handler.UserHandler {
-
 	userHandlerPointer := handler.NewUserHandler(*userService)
-
 	return *userHandlerPointer
 }
