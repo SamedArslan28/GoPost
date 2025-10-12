@@ -5,18 +5,14 @@ import (
 	"database/sql"
 	"errors"
 
-	app_errors "github.com/SamedArslan28/gopost/internal/errors"
+	apperrors "github.com/SamedArslan28/gopost/internal/errors"
 	"github.com/SamedArslan28/gopost/internal/models"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type UserRepository interface {
-	// SaveUser saves a new user in the database
 	SaveUser(ctx context.Context, user *models.User) (*models.User, error)
-
-	// GetUserByEmail retrieves a user by email (used for login)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
-
 	GetUserById(ctx context.Context, id int) (*models.User, error)
 }
 
@@ -40,7 +36,7 @@ func (u userRepository) SaveUser(ctx context.Context, user *models.User) (*model
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" {
-				return nil, app_errors.ErrEmailConflict
+				return nil, apperrors.ErrEmailConflict
 			}
 		}
 		return nil, err
