@@ -28,6 +28,13 @@ run: build docker-up
 	$(BIN_DIR)/$(APP_NAME) & \
 	wait $$! || true
 
+.PHONY: air
+air: docker-up
+	@echo "🚀 Running  $(APP_NAME) with Air..."
+	@trap 'make docker-down' INT TERM EXIT; \
+	air & \
+	wait $$! || true
+
 
 # Run using go run (skips build)
 .PHONY: dev
