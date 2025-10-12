@@ -6,6 +6,7 @@ import (
 
 	"github.com/SamedArslan28/gopost/internal/models"
 	"github.com/SamedArslan28/gopost/internal/service"
+	"github.com/SamedArslan28/gopost/internal/validator"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,7 +17,7 @@ type UserHandler struct {
 type RegisterForm struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
-	Email    string `json:"email" validate:"required"`
+	Email    string `json:"email" validate:"required,min_length=5,email"`
 }
 
 func NewUserHandler(service service.UserService) *UserHandler {
@@ -24,23 +25,29 @@ func NewUserHandler(service service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) RegisterHandler(c *fiber.Ctx) error {
-	var form RegisterForm
-	if err := c.BodyParser(&form); err != nil {
+	var req RegisterForm
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to hash password",
 		})
 	}
 
+	if errs := validator.ValidateStruct(req); errs != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"errors": errs,
+		})
+	}
+
 	user := &models.User{
-		Username: form.Username,
-		Email:    form.Email,
+		Username: req.Username,
+		Email:    req.Email,
 		Password: string(hashedPassword),
 	}
 
@@ -69,6 +76,12 @@ func (h *UserHandler) FindByEmailHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	if errs := validator.ValidateStruct(req); errs != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"errors": errs,
+		})
+	}
+
 	user, err := h.service.GetByEmail(c.Context(), req.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -89,27 +102,27 @@ type IDRequest struct {
 	ID int `json:"id"`
 }
 
-func (h *UserHandler) FindByIdHandler(c *fiber.Ctx) error {
-	var req IDRequest
-	err := c.BodyParser(&req)
-	if err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-			"error": "failed to parse req",
-		})
-	}
-
-	user, err := h.service.GetById(c.Context(), req.ID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "user not found",
-			})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to get user: " + err.Error(),
-		})
-	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"user": user,
-	})
-}
+//func (h *UserHandler) FindByIdHandler(c *fiber.Ctx) error {
+//	var req IDRequest
+//	err := c.BodyParser(&req)
+//	if err != nil {
+//		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+//			"error": "failed to parse req",
+//		})
+//	}
+//
+//	user, err := h.service.GetById(c.Context(), req.ID)
+//	if err != nil {
+//		if errors.Is(err, sql.ErrNoRows) {
+//			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+//				"error": "user not found",
+//			})
+//		}
+//		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+//			"error": "failed to get user: " + err.Error(),
+//		})
+//	}
+//	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+//		"user": user,
+//	})
+//}

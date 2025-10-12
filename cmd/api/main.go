@@ -9,6 +9,7 @@ import (
 	"github.com/SamedArslan28/gopost/internal/repository"
 	"github.com/SamedArslan28/gopost/internal/routes"
 	"github.com/SamedArslan28/gopost/internal/service"
+	"github.com/SamedArslan28/gopost/internal/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
@@ -27,6 +28,7 @@ func main() {
 		log.Fatal("Error connecting to database: " + err.Error())
 	}
 	log.Println("Connected to database")
+	validator.InitValidator()
 
 	app := fiber.New()
 	app.Use(logger.New())

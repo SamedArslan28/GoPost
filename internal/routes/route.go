@@ -18,5 +18,4 @@ func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 	user := api.Group("/user")
 	user.Post("/register", userHandler.RegisterHandler)
 	user.Post("/find/email", userHandler.FindByEmailHandler)
-	user.Post("/find/id", userHandler.FindByIdHandler)
 }
