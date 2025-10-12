@@ -24,9 +24,11 @@ build:
 .PHONY: run
 run: build docker-up
 	@echo "🚀 Running $(APP_NAME)..."
-	@trap 'make docker-down' INT TERM EXIT; \
-	$(BIN_DIR)/$(APP_NAME) & \
-	wait $$! || true
+	@trap 'echo "🛑 Caught signal, stopping..."; kill $$pid 2>/dev/null; make docker-down; exit 0' INT TERM EXIT; \
+	$(BIN_DIR)/$(APP_NAME) & pid=$$!; \
+	wait $$pid || true
+
+
 
 .PHONY: air
 air: docker-up
