@@ -4,43 +4,33 @@ import (
 	"log"
 	"os"
 
-	"github.com/SamedArslan28/gopost/internal/database"
-	"github.com/SamedArslan28/gopost/internal/handler"
-	"github.com/SamedArslan28/gopost/internal/repository"
-	"github.com/SamedArslan28/gopost/internal/routes"
-	"github.com/SamedArslan28/gopost/internal/service"
 	"github.com/SamedArslan28/gopost/internal/validator"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
 )
 
 func main() {
+	// 1. Load Configuration from .env file
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-
 	dbDsn := os.Getenv("POSTGRES_URL")
-
-	db, err := database.ConnectDB(dbDsn)
-	if err != nil {
-		log.Fatal("Error connecting to database: " + err.Error())
+	if dbDsn == "" {
+		log.Fatal("POSTGRES_URL environment variable not set")
 	}
-	log.Println("Connected to database")
+
+	// 2. Initialize the application using Wire's generated function
+	// This single call will create and connect the database, repository,
+	// service, handler, and the Fiber app itself.
+	server, err := InitializeApp(dbDsn)
+	if err != nil {
+		log.Fatalf("Failed to initialize application: %v", err)
+	}
+	log.Println("Dependencies initialized")
+
+	// 3. Perform any initial setup that isn't part of the dependency graph
 	validator.InitValidator()
 
-	app := fiber.New()
-	app.Use(logger.New())
-
-	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(*userService)
-
-	routes.SetupRoutes(app, userHandler)
-
-	err = app.Listen(":3000")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// 4. Start the server
+	server.Start()
 }

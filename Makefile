@@ -72,3 +72,7 @@ clean:
 	@echo "🧹 Cleaning up..."
 	@rm -rf $(BIN_DIR)
 	@go clean
+
+.PHONY: wire
+wire:
+	@wire $(CMD_DIR)
