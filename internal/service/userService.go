@@ -15,7 +15,7 @@ func NewUserService(repo repository.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (s UserService) Register(ctx context.Context, user *models.User) (*models.User, error) {
+func (s *UserService) Register(ctx context.Context, user *models.User) (*models.User, error) {
 	savedUser, err := s.repo.SaveUser(ctx, user)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func (s UserService) Register(ctx context.Context, user *models.User) (*models.U
 	return savedUser, nil
 }
 
-func (s UserService) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	user, err := s.repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, err

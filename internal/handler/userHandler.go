@@ -21,12 +21,32 @@ func NewUserHandler(service service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
+// RegisterForm represents the user registration request body.
+// swagger:model
 type RegisterForm struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-	Email    string `json:"email" validate:"required,min_length=5,email"`
+	Username string `json:"username" validate:"required" example:"johndoe"`
+	Password string `json:"password" validate:"required" example:"secret123"`
+	Email    string `json:"email" validate:"required,min_length=5,email" example:"johndoe@example.com"`
 }
 
+// EmailRequest represents the request body for searching by email.
+// swagger:model
+type EmailRequest struct {
+	Email string `json:"email" validate:"required,email" example:"johndoe@example.com"`
+}
+
+// RegisterHandler godoc
+// @Summary Register a new user
+// @Description Creates a new user account by providing username, password, and email.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body RegisterForm true "User registration form"
+// @Success 201 {object} models.User
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 422 {object} response.ValidationErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/register [post]
 func (h *UserHandler) RegisterHandler(c *fiber.Ctx) error {
 	var req RegisterForm
 	if err := c.BodyParser(&req); err != nil {
@@ -56,10 +76,18 @@ func (h *UserHandler) RegisterHandler(c *fiber.Ctx) error {
 	return response.JSONSuccess(c, fiber.StatusCreated, newUser)
 }
 
-type EmailRequest struct {
-	Email string `json:"email"`
-}
-
+// FindByEmailHandler godoc
+// @Summary Find user by email
+// @Description Retrieves a user record using their email address.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param email body EmailRequest true "Email search request"
+// @Success 200 {object} models.User
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 422 {object} response.ValidationErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /users/find [post]
 func (h *UserHandler) FindByEmailHandler(c *fiber.Ctx) error {
 	var req EmailRequest
 	err := c.BodyParser(&req)
