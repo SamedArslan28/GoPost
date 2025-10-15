@@ -10,6 +10,10 @@ import (
 
 func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 
+	app.Use(middleware.CorsConfig())
+	app.Use(middleware.SecurityHeaders())
+	app.Use(middleware.XSSEscapeMiddleware())
+
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
 	user := app.Group("/user")
