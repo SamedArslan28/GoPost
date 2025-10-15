@@ -45,11 +45,11 @@ func (u userRepository) SaveUser(ctx context.Context, user *models.User) (*model
 }
 
 func (u userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT id, username, email, created_at FROM users WHERE email = $1`
+	query := `SELECT id, username, email, password,created_at FROM users WHERE email = $1`
 	row := u.db.QueryRowContext(ctx, query, email)
 
 	user := &models.User{}
-	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Created)
+	err := row.Scan(&user.Id, &user.Username, &user.Email, &user.Password, &user.Created)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, sql.ErrNoRows

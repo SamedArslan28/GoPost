@@ -5,6 +5,8 @@ import (
 
 	"github.com/SamedArslan28/gopost/internal/models"
 	"github.com/SamedArslan28/gopost/internal/repository"
+	"github.com/SamedArslan28/gopost/internal/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -29,4 +31,20 @@ func (s UserService) GetByEmail(ctx context.Context, email string) (*models.User
 		return nil, err
 	}
 	return user, nil
+}
+
+func (s UserService) Login(ctx context.Context, email, password string) (*string, error) {
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return nil, err
+	}
+	token, err := utils.GenerateToken(user.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
 }

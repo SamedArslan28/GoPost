@@ -80,3 +80,25 @@ func (h *UserHandler) FindByEmailHandler(c *fiber.Ctx) error {
 	}
 	return response.JSONSuccess(c, fiber.StatusOK, user)
 }
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (h *UserHandler) LoginHandler(c *fiber.Ctx) error {
+	var req LoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.JSONError(c, fiber.StatusUnprocessableEntity, apperrors.ErrParseBody.Error())
+	}
+
+	if errs := validator.ValidateStruct(req); errs != nil {
+		return response.JSONValidationError(c, errs)
+	}
+
+	token, err := h.service.Login(c.Context(), req.Email, req.Password)
+	if err != nil {
+		return response.JSONError(c, fiber.StatusInternalServerError, "failed to login"+" "+err.Error())
+	}
+	return response.JSONSuccess(c, fiber.StatusOK, token)
+}
