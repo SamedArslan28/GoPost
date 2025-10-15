@@ -3,19 +3,15 @@ package routes
 import (
 	"github.com/SamedArslan28/gopost/internal/handler"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 
-	api := app.Group("/")
-	api.Get("/", func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
-			"message": "Hello World",
-			"status":  fiber.StatusOK,
-		})
-	})
+	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
-	user := api.Group("/user")
+	user := app.Group("/user")
 	user.Post("/register", userHandler.RegisterHandler)
 	user.Post("/find/email", userHandler.FindByEmailHandler)
 }

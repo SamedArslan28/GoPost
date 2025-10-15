@@ -29,9 +29,8 @@ run: build docker-up
 	wait $$pid || true
 
 
-
 .PHONY: air
-air: docker-up
+air: build docker-up
 	@echo "🚀 Running  $(APP_NAME) with Air..."
 	@trap 'make docker-down' INT TERM EXIT; \
 	air & \
