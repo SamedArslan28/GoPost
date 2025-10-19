@@ -15,7 +15,6 @@ type Server struct {
 }
 
 // NewServer acts as a provider for our Server. It receives the dependencies
-// it needs (the userHandler) and sets up the Fiber application.
 func NewServer(userHandler *handler.UserHandler, postHandler *handler.PostHandler) *Server {
 	app := fiber.New()
 	app.Use(logger.New())

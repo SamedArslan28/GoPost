@@ -1,4 +1,24 @@
 services:
+  gopost_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gopost_app
+    depends_on:
+      - gopost_postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=gopost_postgres
+      - POSTGRES_URL=${POSTGRES_URL}
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   gopost_postgres:
     container_name: gopost_db
     image: postgres:15
@@ -16,6 +36,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - monitoring
 
   prometheus:
     image: prom/prometheus:latest
@@ -34,7 +56,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "8080:3000"
+      - "8081:3000"
     volumes:
       - ./data/grafana_data:/var/lib/grafana
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning
@@ -49,7 +71,3 @@ services:
 networks:
   monitoring:
     driver: bridge
-
-volumes:
-  grafana_data:
-  prometheus_data:
