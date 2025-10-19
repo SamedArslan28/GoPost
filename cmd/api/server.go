@@ -34,3 +34,7 @@ func (s *Server) Start() {
 		log.Fatal(err)
 	}
 }
+
+func (s *Server) Shutdown() error {
+	return s.App.Shutdown()
+}
