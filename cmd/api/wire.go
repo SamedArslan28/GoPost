@@ -1,9 +1,6 @@
 //go:build wireinject
 // +build wireinject
 
-// This file is purely an instruction manual for the `wire` command.
-// It tells Wire how to build the application by listing the necessary providers.
-
 package main
 
 import (
@@ -16,23 +13,30 @@ import (
 )
 
 // InitializeApp tells Wire how to build the server, accepting the app config as input.
-// It references the helper providers located in your providers.go file.
 func InitializeApp(cfg config.Config) (*Server, error) {
 	wire.Build(
-		// Helper providers (from providers.go)
+		// Config provider
 		provideDatabaseDsn,
-		provideUserHandler,
 
-		// Core component providers (from the internal package)
+		// Database provider
 		database.ConnectDB,
-		repository.NewUserRepository,
-		service.NewUserService,
 
-		// The final server provider
+		// Repository providers
+		repository.NewUserRepository,
+		repository.NewPostRepository,
+
+		// Service providers
+		service.NewUserService,
+		service.NewPostService,
+
+		// Handler providers
+		provideUserHandler,
+		providePostHandler,
+
+		// Server provider
 		NewServer,
 	)
 
-	// This return is a placeholder that Wire will replace.
 	return nil, nil
 }
 
@@ -40,10 +44,11 @@ func provideDatabaseDsn(cfg config.Config) string {
 	return cfg.DatabaseURL
 }
 
-// provideUserHandler is a helper provider.
-// Your original code was: handler.NewUserHandler(*userService)
-// This function replicates that logic so Wire can use it.
-func provideUserHandler(userService *service.UserService) handler.UserHandler {
-	userHandlerPointer := handler.NewUserHandler(*userService)
-	return *userHandlerPointer
+// Handlers should receive pointer services, return pointer handlers
+func provideUserHandler(userService *service.UserService) *handler.UserHandler {
+	return handler.NewUserHandler(userService)
+}
+
+func providePostHandler(postService *service.PostService) *handler.PostHandler {
+	return handler.NewPostHandler(postService)
 }

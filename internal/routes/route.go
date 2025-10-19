@@ -8,11 +8,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler) {
+func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler, postHandler *handler.PostHandler) {
 
 	app.Use(middleware.CorsConfig())
 	app.Use(middleware.SecurityHeaders())
-	app.Use(middleware.XSSEscapeMiddleware())
+	//app.Use(middleware.XSSEscapeMiddleware())
 
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
@@ -22,9 +22,7 @@ func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler) {
 	user.Post("/login", userHandler.LoginHandler)
 
 	authenticated := app.Group("/posts", middleware.JWTMiddleware())
-	authenticated.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"success": true,
-		})
-	})
+	authenticated.Post("/create", postHandler.CreatePost)
+	authenticated.Get("/", postHandler.GetAllPosts)
+	authenticated.Get("/:id", postHandler.GetPostById)
 }
