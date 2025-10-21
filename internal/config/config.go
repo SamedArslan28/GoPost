@@ -8,7 +8,6 @@ import (
 )
 
 // Config holds all configuration for the application.
-// It's a central place to manage all environment-specific values.
 type Config struct {
 	DatabaseURL string
 }

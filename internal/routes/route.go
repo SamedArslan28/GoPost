@@ -15,6 +15,7 @@ func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler, postHandler *
 	//app.Use(middleware.XSSEscapeMiddleware())
 
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
+	app.Get("/healthcheck", handler.HealthCheck)
 
 	user := app.Group("/user")
 	user.Post("/register", userHandler.RegisterHandler)

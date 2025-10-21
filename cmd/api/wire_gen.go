@@ -39,7 +39,6 @@ func provideDatabaseDsn(cfg config.Config) string {
 	return cfg.DatabaseURL
 }
 
-// Handlers should receive pointer services, return pointer handlers
 func provideUserHandler(userService *service.UserService) *handler.UserHandler {
 	return handler.NewUserHandler(userService)
 }

@@ -32,7 +32,6 @@ func main() {
 	}()
 
 	gracefulShutdown(server, 10*time.Second)
-
 }
 
 // gracefulShutdown gracefully stops the server with a timeout
@@ -51,7 +50,6 @@ func gracefulShutdown(server *Server, timeout time.Duration) {
 	go func() {
 		done <- server.Shutdown()
 	}()
-
 	select {
 	case <-ctx.Done():
 		log.Println("⚠️ Timeout reached during shutdown. Forcing exit...")
