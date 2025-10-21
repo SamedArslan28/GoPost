@@ -4,6 +4,11 @@ CMD_DIR=./cmd/api
 BIN_DIR=./bin
 DOCKER_COMPOSE_FILE=docker-compose.yaml
 
+-include .env
+export
+
+LOCAL_POSTGRES_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?sslmode=disable
+
 # Go build flags
 GO_BUILD=cd $(CMD_DIR) && go build -o ../../$(BIN_DIR)/$(APP_NAME)
 
@@ -13,7 +18,7 @@ all: build run
 
 # Build the Go binary
 .PHONY: build
-build:
+build: wire
 	@echo "🚧 Building $(APP_NAME)..."
 	@mkdir -p $(BIN_DIR)
 	@rm -f $(BIN_DIR)/$(APP_NAME)
@@ -23,8 +28,9 @@ build:
 # Run the application with Docker
 .PHONY: run
 run: build docker-up
-	@echo "🚀 Running $(APP_NAME)..."
+	@echo "🚀 Running $(APP_NAME) on host..."
 	@trap 'echo "🛑 Caught signal, stopping..."; kill $$pid 2>/dev/null; make docker-down; exit 0' INT TERM EXIT; \
+	export POSTGRES_URL=$(LOCAL_POSTGRES_URL); \
 	$(BIN_DIR)/$(APP_NAME) & pid=$$!; \
 	wait $$pid || true
 
@@ -33,14 +39,16 @@ run: build docker-up
 air: build docker-up
 	@echo "🚀 Running  $(APP_NAME) with Air..."
 	@trap 'make docker-down' INT TERM EXIT; \
+	export POSTGRES_URL=$(LOCAL_POSTGRES_URL); \
 	air & \
 	wait $$! || true
 
 
 # Run using go run (skips build)
 .PHONY: dev
-dev: docker-up
+dev: wire docker-up
 	@echo "💻 Running $(APP_NAME) in dev mode..."
+	export POSTGRES_URL=$(LOCAL_POSTGRES_URL); \
 	@go run $(CMD_DIR)/main.go
 
 # Bring up Docker containers
@@ -59,6 +67,7 @@ docker-down:
 .PHONY: test
 test:
 	@echo "🧪 Running tests..."
+	export POSTGRES_URL=$(LOCAL_POSTGRES_URL); \
 	@go test ./... -v
 
 # Run lint checks (if golangci-lint installed)
