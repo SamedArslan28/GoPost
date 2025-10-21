@@ -15,6 +15,8 @@ type PostRepository interface {
 	NewPost(ctx context.Context, authorId int32, title, body string) (*models.Post, error)
 	GetAllPostsForUser(ctx context.Context, userId int32) ([]*models.Post, error)
 	GetPostById(ctx context.Context, postId int32) (*models.Post, error)
+	DeletePost(ctx context.Context, id int32) error
+	UpdatePost(ctx context.Context, id int32, title string, body string) (*models.Post, error)
 }
 
 type postRepository struct {
@@ -55,9 +57,9 @@ func (p *postRepository) NewPost(ctx context.Context, authorId int32, title, bod
 
 func (p *postRepository) GetAllPostsForUser(ctx context.Context, userId int32) ([]*models.Post, error) {
 	query := `
-	SELECT id, title, body, author_id
-	FROM posts
-	WHERE author_id = $1
+    SELECT id, title, body, author_id
+    FROM posts
+    WHERE author_id = $1
 `
 	rows, err := p.db.QueryContext(ctx, query, userId)
 	if err != nil {
@@ -79,18 +81,15 @@ func (p *postRepository) GetAllPostsForUser(ctx context.Context, userId int32) (
 		posts = append(posts, &post)
 	}
 
-	if len(posts) == 0 {
-		return nil, sql.ErrNoRows
-	}
-
+	// Return an empty slice, not an error, if no posts are found
 	return posts, nil
 }
 
 func (p *postRepository) GetPostById(ctx context.Context, postId int32) (*models.Post, error) {
 	query := `
-	SELECT id, title, body, author_id
-	FROM posts
-	WHERE id = $1
+    SELECT id, title, body, author_id
+    FROM posts
+    WHERE id = $1
 `
 	var post models.Post
 	err := p.db.QueryRowContext(ctx, query, postId).Scan(
@@ -101,10 +100,56 @@ func (p *postRepository) GetPostById(ctx context.Context, postId int32) (*models
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("post not found with id %d: %w", postId, err)
+			return nil, sql.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to fetch post: %w", err)
 	}
 
 	return &post, nil
+}
+
+func (p *postRepository) DeletePost(ctx context.Context, id int32) error {
+	var deletedID int32
+
+	query := `DELETE FROM posts WHERE id = $1 RETURNING id`
+
+	err := p.db.QueryRowContext(ctx, query, id).Scan(&deletedID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return sql.ErrNoRows
+		}
+		return fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	return nil
+}
+
+func (p *postRepository) UpdatePost(ctx context.Context, id int32, title string, body string) (*models.Post, error) {
+	var updatedPost models.Post
+
+	query := `
+       UPDATE posts 
+       SET title = $1, body = $2
+       WHERE id = $3
+       RETURNING id, title, body, author_id`
+
+	err := p.db.QueryRowContext(ctx, query,
+		title,
+		body,
+		id,
+	).Scan(
+		&updatedPost.Id,
+		&updatedPost.Title,
+		&updatedPost.Body,
+		&updatedPost.AuthorId,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, sql.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to update post: %w", err)
+	}
+
+	return &updatedPost, nil
 }
