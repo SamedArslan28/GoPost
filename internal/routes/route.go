@@ -12,7 +12,6 @@ func SetupRoutes(app *fiber.App, userHandler *handler.UserHandler, postHandler *
 
 	app.Use(middleware.CorsConfig())
 	app.Use(middleware.SecurityHeaders())
-	//app.Use(middleware.XSSEscapeMiddleware())
 
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 	app.Get("/healthcheck", handler.HealthCheck)
