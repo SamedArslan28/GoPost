@@ -30,7 +30,6 @@ func main() {
 	go func() {
 		server.Start()
 	}()
-
 	gracefulShutdown(server, 10*time.Second)
 }
 
@@ -62,6 +61,5 @@ func gracefulShutdown(server *Server, timeout time.Duration) {
 	}
 
 	fmt.Println("Running cleanup tasks...")
-
 	fmt.Println("Cleanup completed. Exiting.")
 }
